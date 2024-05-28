@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <title>Tubes Progjar</title>
+    <link rel="stylesheet" href="../css/style.css">
+</head>
+
+<body>
+    <h1>Tubes Progjar</h1>
+    <div id="status-container">Loading...</div>
+
+    <script>
+        async function fetchStatus() {
+            try {
+                const response = await fetch('/api/status');
+                if (!response.ok) {
+                    throw new Error('Network response was not ok');
+                }
+                const data = await response.json();
+                const container = document.getElementById('status-container');
+                container.innerHTML = '';
+                let websiteNumber = 1;
+                for (const [url, status] of Object.entries(data)) {
+                    const div = document.createElement('div');
+                    div.classList.add('status-box');
+                    div.classList.add(status === 'UP' ? 'status-up' : 'status-down');
+
+                    div.innerHTML = `<span class="website-number">Website ${websiteNumber}: </span>${url}: ${status}`;
+
+                    container.appendChild(div);
+                    websiteNumber++;
+                }
+            } catch (error) {
+                console.error('Fetch error: ', error);
+                const container = document.getElementById('status-container');
+                container.innerHTML = '<p>Error fetching website status. Please try again later.</p>';
+            }
+        }
+
+        // Memanggil fungsi fetchStatus setiap 30 detik
+        setInterval(fetchStatus, 30000);
+
+        // Memanggil fungsi fetchStatus saat halaman pertama kali dimuat
+        // untuk mendapatkan status dari endpoint /api/status dan memperbarui halaman.
+        fetchStatus();
+    </script>
+</body>
+
+</html>
