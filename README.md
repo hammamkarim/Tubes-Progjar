@@ -1,2 +1,5 @@
 # Tubes-Progjar
+
 OK GAS, UAS LANCAR AAMIIN
+
+AMIN
