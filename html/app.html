@@ -33,7 +33,7 @@
       }
 
       .card {
-        height: 420px;
+        height: 450px;
       }
 
       .card img {
@@ -53,13 +53,7 @@
     </style>
   </head>
   <body>
-    <div
-      class="container-fluid"
-      x-data="{ isLoading: true, statuses: [] }"
-      x-init="fetch('/api/website')
-            .then(response => response.json())
-            .then(data => { statuses = data.data; isLoading = false; })"
-    >
+    <div class="container-fluid" x-data="websiteStatus" x-init="fetchData">
       <h1 class="display-2 text-center">Tubes Progjar</h1>
       <div class="d-flex justify-content-center">
         <button
@@ -78,37 +72,109 @@
       </div>
 
       <div class="d-flex flex-wrap justify-content-center">
-        <template x-for="status in statuses">
-          <!-- <a x-bind:href="status.url" target="_blank"> -->
+        <template x-for="status in statuses" :key="status.url">
           <div class="card m-3" style="width: 20rem">
             <img
-              x-bind:src="status.img"
+              :src="status.img"
               class="card-img-top d-flex mx-auto p-2"
               alt="..."
             />
             <div class="card-body">
               <h5 class="card-title text-center" x-text="status.name"></h5>
-              <div
-                x-data="{ time: 0 }"
-                x-init="setInterval(() => time++, 1000)"
+              <p class="card-text">
+                Status:
+                <span
+                  :class="statusClass(status.status)"
+                  x-text="status.status"
+                ></span>
+              </p>
+              <p class="card-text">
+                Timer: <span x-text="status.timer"></span>s
+              </p>
+              <a :href="status.url" target="_blank" class="btn btn-primary"
+                >Kunjungi Website</a
               >
-                <!-- <span x-text="time"></span> -->
-                <p class="card-text">Status :</p>
-                <p class="card-text">
-                  Timer : <span x-text="time"></span> Detik
-                </p>
-                <a
-                  x-bind:href="status.url"
-                  target="_blank"
-                  class="btn btn-primary"
-                  >Kunjungi Website</a
-                >
-              </div>
+              <p class="card-text text-end">
+                Last Check: <span x-text="status.lastChecked"></span>
+              </p>
             </div>
           </div>
         </template>
       </div>
     </div>
+    <script>
+      function websiteStatus() {
+        return {
+          isLoading: true,
+          statuses: [],
+          intervals: [],
+          fetchData() {
+            Promise.all([
+              fetch("/api/website").then((response) => response.json()),
+              fetch("/api/status").then((response) => response.json()),
+            ])
+              .then(([websites, statuses]) => {
+                this.statuses = websites.data.map((site) => ({
+                  ...site,
+                  status: statuses[site.url] || "UNKNOWN",
+                  timer: this.getIntervalTime(statuses[site.url] || "UNKNOWN"),
+                }));
+                this.isLoading = false;
+                this.startIntervals();
+              })
+              .catch((error) => {
+                console.error("Error fetching data:", error);
+                this.isLoading = false;
+              });
+          },
+          getIntervalTime(status) {
+            switch (status) {
+              case "UP":
+                return 60;
+              case "DOWN":
+                return 30;
+              case "UNKNOWN":
+                return 20;
+              default:
+                return 60;
+            }
+          },
+          statusClass(status) {
+            return {
+              "text-success": status === "UP",
+              "text-danger": status === "DOWN",
+              "text-warning": status === "UNKNOWN",
+            };
+          },
+          startIntervals() {
+            this.statuses.forEach((site, index) => {
+              this.intervals[index] = setInterval(() => {
+                if (site.timer > 0) {
+                  site.timer--;
+                } else {
+                  this.updateStatus(site.url, index);
+                }
+              }, 1000);
+            });
+          },
+          updateStatus(url, index) {
+            fetch(`/api/status?url=${encodeURIComponent(url)}`)
+              .then((response) => response.json())
+              .then((data) => {
+                const newStatus = data[url] || "UNKNOWN";
+                this.statuses[index].status = newStatus;
+                this.statuses[index].timer = this.getIntervalTime(newStatus);
+                this.statuses[index].lastChecked = new Date().toLocaleString();
+              })
+              .catch((error) => {
+                console.error("Error updating status:", error);
+                this.statuses[index].timer = this.getIntervalTime("UNKNOWN");
+                this.statuses[index].lastChecked = new Date().toLocaleString();
+              });
+          },
+        };
+      }
+    </script>
     <script
       src="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/js/bootstrap.bundle.min.js"
       integrity="sha384-MrcW6ZMFYlzcLA8Nl+NtUVF0sA7MsXsP1UyJoMp4YLEuNSfAP+JcXn/tWtIaxVXM"
