@@ -1,4 +1,3 @@
-# Flask untuk membuat website di python
 from flask import Flask, jsonify, render_template
 import asyncio
 import aiohttp
@@ -17,7 +16,6 @@ def fetch_json(file_path):
         data = json.load(json_file)
     return data
 
-
 file_json = 'static/website.json'
 data_json = fetch_json(file_json)
 urls = {data_web['url']: 'UNKNOWN' for data_web in data_json['data']}
@@ -27,13 +25,19 @@ status_data = {}
 
 async def fetch_status(session, url):
     try:
-        async with session.get(url, timeout=10) as response:
-            return url, 'UP' if response.status == 200 else 'DOWN'
+        async with session.get(url, timeout=10, allow_redirects=False) as response:
+            if response.status == 200:
+                return url, 'UP'
+            elif 300 <= response.status < 400:
+                return url, 'REDIRECTED'
+            else:
+                return url, 'DOWN'
     except (aiohttp.ClientError, asyncio.TimeoutError):
         return url, 'DOWN'
     except Exception as e:
         logging.error(f"Error checking {url}: {e}")
         return url, 'DOWN'
+
 
 
 async def check_website_status(url_group):
@@ -48,12 +52,12 @@ def schedule_checks():
     up_urls = [url for url, status in status_data.items() if status == 'UP']
     down_urls = [url for url, status in status_data.items()
                  if status == 'DOWN']
-    # unknown_urls = [url for url, status in status_data.items()
-    #                 if status == 'UNKNOWN']
+    redirected_urls = [url for url, status in status_data.items()
+                       if status == 'REDIRECTED']
 
     asyncio.run(check_website_status(up_urls))
     asyncio.run(check_website_status(down_urls))
-    # asyncio.run(check_website_status(unknown_urls))
+    asyncio.run(check_website_status(redirected_urls))
 
 
 scheduler = BackgroundScheduler(timezone=pytz.utc)

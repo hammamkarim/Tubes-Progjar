@@ -134,6 +134,8 @@
                 return 60;
               case "DOWN":
                 return 30;
+              case "REDIRECTED":
+                return 45;
               // case "UNKNOWN":
               //   return 20;
               default:
@@ -144,7 +146,8 @@
             return {
               "text-success": status === "UP",
               "text-danger": status === "DOWN",
-              "text-warning": status === "UNKNOWN",
+              "text-warning": status === "REDIRECTED",
+              "text-secondary": status === "UNKNOWN",
             };
           },
           startIntervals() {
