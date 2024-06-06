@@ -27,8 +27,9 @@
         color: black;
       }
 
-      a:hover {
-        scale: 1.1;
+      a:hover 
+      {
+        scale: 1.03;
         transition: 50ms;
       }
 
@@ -94,7 +95,7 @@
               <a :href="status.url" target="_blank" class="btn btn-primary"
                 >Kunjungi Website</a
               >
-              <p class="card-text text-end">
+              <p class="card-text text-end" style="margin-top: 10px;">
                 Last Check: <span x-text="status.lastChecked"></span>
               </p>
             </div>
