@@ -110,4 +110,4 @@ def index():
 # jalankan aplikasi Flask
 if __name__ == "__main__":
     asyncio.run(check_website_status())
-    app.run(host='0.0.0.0', port=1000)
+    app.run(host='192.168.76.63', port=5000)
